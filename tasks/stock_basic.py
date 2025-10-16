@@ -2,10 +2,11 @@ import akshare as ak
 from core.storage.storage_factory import StorageFactory
 from configs.settings import DATABASE, STORAGE_TYPE
 from core.logger import logger
-
+from utils.pinyin import PinyinConverter
+from utils.date_utils import get_timestamp_ms
 
 def run_stock_basic():
-    logger.info("📊 正在从 AkShare 获取股票基础信息...")
+    logger.info("正在从 AkShare 获取股票基础信息...")
     
     df = ak.stock_info_a_code_name()
     logger.info(f"获取到 {len(df)} 条数据")
@@ -15,11 +16,18 @@ def run_stock_basic():
         return
 
     sql = """
-    INSERT INTO `stock_base_info` (code, name)
-    VALUES (%s, %s)
-    ON DUPLICATE KEY UPDATE code = VALUES(code)
+    INSERT INTO stock_base_info (code, name, pinyin, create_time, update_time)
+    VALUES (%s, %s, %s, %s, %s)
+    ON DUPLICATE KEY UPDATE
+        name = VALUES(name),
+        pinyin = VALUES(pinyin),
+        update_time = VALUES(update_time);
     """
-    data = [(row["code"], row["name"]) for _, row in df.iterrows()]
+
+    timeStampMs = get_timestamp_ms()
+    converter = PinyinConverter()
+
+    data = [(row["code"], row["name"],converter.hanzi_to_pinyin(row["name"],mode="first"),timeStampMs,timeStampMs) for _, row in df.iterrows()]
     storage = StorageFactory.get_storage(STORAGE_TYPE, DATABASE)
     storage.insert_many(sql, data)
     

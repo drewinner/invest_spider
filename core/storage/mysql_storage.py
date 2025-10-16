@@ -30,7 +30,7 @@ class MySQLStorage:
             charset="utf8mb4",
             autocommit=True
         )
-        logger.info("✅ MySQL 连接池初始化完成")
+        logger.info("MySQL 连接池初始化完成")
 
     # ---------------------------
     # 基础工具
